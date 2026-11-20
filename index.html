@@ -48,6 +48,9 @@ input,select,textarea{width:100%;font:inherit;padding:8px;border:1.5px solid var
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--red);color:#fff;padding:10px 16px;font-weight:700;z-index:99}
 #sv{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--card);border-top:2px solid var(--red);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;font-weight:700;font-size:13px}
 [hidden]{display:none!important}
+#fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;padding:14px 20px;font-size:14px;box-shadow:0 6px 20px #0008}
+body.dirty #fab{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+body[data-sec="b"] #fab{box-shadow:0 6px 20px #8b49cf66}
 .zb{position:relative;overflow:hidden;cursor:zoom-in;touch-action:pan-y;-webkit-user-select:none;user-select:none}
 .zb img{transition:transform .14s ease-out;will-change:transform;transform-origin:50% 50%}
 .zb.zoom{cursor:zoom-out;touch-action:none}
@@ -127,6 +130,7 @@ body[data-sec="b"] #adm,body[data-sec="b"] .note{color:#6b3fa3}
 <p class="note" id="mode"></p>
 <footer style="text-align:center;margin:34px 0 10px"><a href="#" id="adm" style="font-size:11px;opacity:.45;color:inherit">Administrador</a></footer>
 </div>
+<button class="btn red" id="fab" hidden>+ NUEVA GORRA</button>
 <div id="sv" hidden=""><span>Tienes cambios sin guardar</span><button class="btn red" id="sok">GUARDAR CAMBIOS</button><button class="btn" id="sno">DESCARTAR</button></div>
 <dialog id="cdlg"><form method="dialog" style="margin:0"><b>AJUSTAR IMAGEN</b><canvas id="ccv" width="320" height="240"></canvas><input id="czm" type="range" min="1" max="3" step="0.01" value="1" style="padding:0"><p class="note" style="margin:6px 0 0">Arrastra la imagen para moverla y usa la barra para acercar.</p><div style="display:flex;gap:8px;margin-top:14px"><button class="btn red" value="ok">LISTO</button><button class="btn" value="x" formnovalidate>CANCELAR</button></div></form></dialog>
 <dialog id="lb"><img id="lbi" alt=""></dialog>
@@ -194,7 +198,7 @@ function render(){
  $("fb").innerHTML=[{id:"todas",name:"TODAS"},...D().cats].map(c=>`<button data-f="${esc(c.id)}" class="${filter===c.id?"on":""}">${esc(c.name)}${canEdit&&c.id!=="todas"?`<span data-dc="${esc(c.id)}" title="Quitar categoría">✕</span>`:""}</button>`).join("");
  $("cnt").textContent=list.length+" REF."+(canEdit?" · "+list.reduce((a,i)=>a+stOf(i),0)+" UND.":"");
  $("grid").innerHTML=list.length?list.map(i=>{const st=stOf(i);
-  const tg=[(sec!=="b"&&i.code)?`<span class="code">CÓDIGO · ${esc(i.code)}</span>`:"",i.cname?`<span class="code clr">COLOR · ${esc(i.cname)}</span>`:""].join("");
+  const tg=[i.cname?`<span class="code clr">COLOR · ${esc(i.cname)}</span>`:""].join("");
   return `<div class="card" data-id="${esc(i.id)}">
  ${i.agot?'<span class="agot">AGOTADA</span>':''}
  <span class="cat">${esc(catName(i.cat))}</span><h3>${esc(i.name)}</h3>
@@ -212,6 +216,7 @@ function render(){
  $("sga").hidden=!canEdit;$("sgdel").hidden=!su;$("sgup").textContent=su?"CAMBIAR GUÍA DE TALLAS":"SUBIR GUÍA DE TALLAS";
  $("adm").textContent=canEdit?"Cerrar sesión de administrador":"Administrador";
  $("sv").hidden=!(canEdit&&dirty());
+ $("fab").hidden=!canEdit;$("fab").textContent=sec==="b"?"+ NUEVO BODY":"+ NUEVA GORRA";document.body.classList.toggle("dirty",canEdit&&dirty());
 }
 // recortador general (ventana aparte)
 function draw(c){if(!C)return;const w=c.width,h=c.height,x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);const s=Math.max(w/C.img.width,h/C.img.height)*C.z;const dw=C.img.width*s,dh=C.img.height*s;x.drawImage(C.img,(w-dw)/2+C.ox*w,(h-dh)/2+C.oy*h,dw,dh)}
@@ -255,17 +260,17 @@ $("img").onchange=async()=>{const f=$("img").files[0];$("img").value="";if(f)awa
 document.addEventListener("paste",e=>{if(!$("dlg").open||$("cdlg").open)return;const it=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith("image/"));if(it){e.preventDefault();pickProd(it.getAsFile())}});
 $("pbtn").onclick=async e=>{e.preventDefault();try{const items=await navigator.clipboard.read();for(const it of items){const t=it.types.find(x=>x.startsWith("image/"));if(t){await pickProd(await it.getType(t));return}}alert("No hay ninguna imagen copiada.")}catch(x){alert("Tu navegador no dejó leer el portapapeles. Pulsa Ctrl+V con esta ventana abierta.")}};
 function open(it){editing=it||null;pend=null;$("dt").textContent=sec==="b"?(it?"EDITAR BODY":"NUEVO BODY"):(it?"EDITAR GORRA":"NUEVA GORRA");
- $("kw").hidden=sec==="b";
+ $("kw").hidden=true;
  $("n").value=it?.name||"";$("c").innerHTML=D().cats.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");if(it?.cat)$("c").value=it.cat;
  $("k").value=it?.code||"";$("p").value=it?.price!=null?Number(it.price).toLocaleString("es-CO"):"";$("s").value=it?String(stOf(it)):"";
  $("cn").value=it?.cname||"";$("col").value=it?.color||(sec==="b"?"#cdb4f6":"#2b1a52");$("colt").value=$("col").value;$("d").value=it?.desc||"";$("img").value="";
  $("imgp").innerHTML=it?.img?`<img class="pv" src="${esc(it.img)}" alt="">`:"";$("dlg").showModal()}
-$("add").onclick=()=>open();
+$("add").onclick=$("fab").onclick=()=>open();
 $("f").onsubmit=e=>{if(e.submitter?.value!=="ok")return;
  const old=editing||{},id=old.id||"c"+Date.now().toString(36);let img=old.img||"";
  if(pend){if(isP(img))trash.push(img);img=pend}
  const n=Math.max(0,parseInt(String($("s").value).replace(/\D/g,""))||0);
- const o={id,name:$("n").value,cat:$("c").value,code:sec==="b"?"":$("k").value,cname:$("cn").value.trim(),price:parseInt(String($("p").value).replace(/\D/g,""))||0,color:$("col").value,desc:$("d").value,img,agot:n<=0};
+ const o={id,name:$("n").value,cat:$("c").value,code:old.code||"",cname:$("cn").value.trim(),price:parseInt(String($("p").value).replace(/\D/g,""))||0,color:$("col").value,desc:$("d").value,img,agot:n<=0};
  const i=D().caps.findIndex(c=>c.id===id);if(i<0)D().caps.push(o);else D().caps[i]=o;
  stk[id]=n;saveStock();render()};
 function setStock(it,n){n=Math.max(0,n);stk[it.id]=n;it.agot=n<=0;saveStock();render()}
