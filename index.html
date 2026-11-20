@@ -48,6 +48,17 @@ input,select,textarea{width:100%;font:inherit;padding:8px;border:1.5px solid var
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--red);color:#fff;padding:10px 16px;font-weight:700;z-index:99}
 #sv{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--card);border-top:2px solid var(--red);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;font-weight:700;font-size:13px}
 [hidden]{display:none!important}
+.mancha{position:relative;display:flex;align-items:center;justify-content:center;min-height:78px;margin:2px 0}
+.mancha svg{position:absolute;inset:0;width:100%;height:100%;fill:var(--red);filter:drop-shadow(0 4px 10px #0006)}
+.mancha span{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;font-family:"Knewave","Permanent Marker",Impact,sans-serif;font-size:25px;line-height:1.05;color:#fff;text-transform:uppercase;text-align:center;padding:0 30px}
+.mancha small{font-family:"Montserrat",Arial,sans-serif;font-size:9px;letter-spacing:.3em;font-weight:800;margin-bottom:3px;opacity:.9}
+.talla{border:2px solid var(--red);background:#9d5cff22;padding:10px;text-align:center}
+.tl1{font-size:11px;font-weight:800;letter-spacing:.3em;color:var(--red)}
+.tl2{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0}
+.tl2 b{font-size:22px;font-weight:800;border:2px solid var(--ink);padding:2px 12px}
+.tl3{font-size:11px;font-weight:800;letter-spacing:.25em}
+body[data-sec="b"] .mancha svg{fill:#cdb4f6;filter:drop-shadow(0 4px 10px #a56be055)}
+body[data-sec="b"] .mancha span{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:600;text-transform:none;font-size:28px;color:#4b2a7b}
 #fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;padding:14px 20px;font-size:14px;box-shadow:0 6px 20px #0008}
 body.dirty #fab{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
 body[data-sec="b"] #fab{box-shadow:0 6px 20px #8b49cf66}
@@ -143,6 +154,7 @@ body[data-sec="b"] #adm,body[data-sec="b"] .note{color:#6b3fa3}
 <div id="kw"><label>CÓDIGO</label><input id="k"></div>
 <label>PRECIO (COP)</label><input id="p" inputmode="numeric" placeholder="Ej: 45.000" autocomplete="off">
 <label>STOCK (solo lo ves tú)</label><input id="s" inputmode="numeric" autocomplete="off">
+<div id="tw" hidden><label>TALLAS (solo New Era) · sepáralas con comas</label><input id="tl" placeholder="Ej: 7 1/4, 7 3/8, 7 1/2" autocomplete="off"></div>
 <label>NOMBRE DEL COLOR (lo ve el cliente)</label><input id="cn" placeholder="Ej: Negro" autocomplete="off">
 <label>COLOR PARA EL DIBUJO (si no hay foto)</label><div style="display:flex;gap:8px"><input id="col" type="color" value="#2b1a52" style="width:56px;padding:2px"><input id="colt" placeholder="#7c3aed" maxlength="7" autocomplete="off"></div>
 <label id="limg">IMAGEN DE LA GORRA</label><input id="img" type="file" accept="image/*"><button class="btn" id="pbtn" type="button" style="margin-top:8px">PEGAR IMAGEN COPIADA</button> <span class="note">o pulsa Ctrl+V</span><div id="imgp"></div>
@@ -165,6 +177,7 @@ try{tok=localStorage.getItem("sh_tok")||""}catch(x){}
 window.alert=m=>{const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(t._t);t._t=setTimeout(()=>t.hidden=true,6000)};
 const ask=(m,inp)=>new Promise(r=>{const d=$("ask"),i=$("ai");$("am").textContent=m;i.hidden=!inp;i.value="";d.returnValue="";d.onclose=()=>r(d.returnValue==="ok"?(inp?i.value:true):(inp?null:false));d.showModal();if(inp)i.focus()});
 const dirty=()=>JSON.stringify(S)!==base;
+const isNE=id=>/new[\s-]*era/i.test(id+" "+catName(id));
 const catName=id=>(D().cats.find(c=>c.id===id)||{name:id||""}).name;
 const stOf=i=>stk[i.id]??0;
 const b64=s=>btoa(unescape(encodeURIComponent(s)));
@@ -198,12 +211,13 @@ function render(){
  $("fb").innerHTML=[{id:"todas",name:"TODAS"},...D().cats].map(c=>`<button data-f="${esc(c.id)}" class="${filter===c.id?"on":""}">${esc(c.name)}${canEdit&&c.id!=="todas"?`<span data-dc="${esc(c.id)}" title="Quitar categoría">✕</span>`:""}</button>`).join("");
  $("cnt").textContent=list.length+" REF."+(canEdit?" · "+list.reduce((a,i)=>a+stOf(i),0)+" UND.":"");
  $("grid").innerHTML=list.length?list.map(i=>{const st=stOf(i);
-  const tg=[i.cname?`<span class="code clr">COLOR · ${esc(i.cname)}</span>`:""].join("");
+  const mc=i.cname?`<div class="mancha">${MAN}<span><small>COLOR</small>${esc(i.cname)}</span></div>`:"";
+  const tl=(isNE(i.cat)&&(i.tallas||"").trim())?`<div class="talla"><div class="tl1">TALLA</div><div class="tl2">${i.tallas.split(",").map(t=>t.trim()).filter(Boolean).map(t=>`<b>${esc(t)}</b>`).join("")}</div><div class="tl3">CERRADA TALLA</div></div>`:"";
   return `<div class="card" data-id="${esc(i.id)}">
  ${i.agot?'<span class="agot">AGOTADA</span>':''}
  <span class="cat">${esc(catName(i.cat))}</span><h3>${esc(i.name)}</h3>
  <div class="art${i.img?" zb":" ph"}">${i.img?`<img src="${esc(i.img)}" alt="${esc(i.name)}" loading="lazy" decoding="async" draggable="false"><span class="lupa">${LUPA}</span>`:(sec==="b"?bodyArt:cap)(i.color||(sec==="b"?"#cdb4f6":"#2b1a52"))}</div>
- ${tg?`<div class="tags">${tg}</div>`:""}
+ ${mc}${tl}
  <p class="desc">${esc(i.desc)}</p>
  <div class="meta"><span>${fmt(i.price)}</span>${canEdit?`<span class="${st<=3?"low":""}">STOCK: ${st}</span>`:""}</div>
  ${canEdit?`<div class="adm"><button data-a="m">−1</button><button data-a="p">+1</button><button data-a="e">EDITAR</button><button data-a="d">BORRAR</button></div>`:""}
@@ -234,6 +248,7 @@ cvv.onpointerdown=e=>{dr={x:e.clientX,y:e.clientY};cvv.setPointerCapture(e.point
 cvv.onpointermove=e=>{if(!dr||!C)return;const r=cvv.getBoundingClientRect();C.ox+=(e.clientX-dr.x)/r.width;C.oy+=(e.clientY-dr.y)/r.height;dr={x:e.clientX,y:e.clientY};draw(cvv)};
 cvv.onpointerup=cvv.onpointercancel=()=>{dr=null};
 // ampliar imagen
+const MAN='<svg viewBox="0 0 200 80" preserveAspectRatio="none" aria-hidden="true"><path d="M20 40C14 22 36 12 58 18C78 22 92 8 118 12C146 16 150 30 172 28C192 26 200 44 184 56C170 68 150 60 132 66C108 74 96 62 74 66C48 72 26 66 20 40Z"/><circle cx="188" cy="12" r="5"/><circle cx="9" cy="66" r="4"/><circle cx="196" cy="70" r="3"/></svg>';
 const LUPA='<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="#fff" stroke-width="2"/><path d="M15 15l6 6M8 10.5h5M10.5 8v5" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
 function pan(z,e){const r=z.getBoundingClientRect(),im=z.querySelector("img");const x=Math.min(100,Math.max(0,(e.clientX-r.left)/r.width*100)),y=Math.min(100,Math.max(0,(e.clientY-r.top)/r.height*100));im.style.transformOrigin=x+"% "+y+"%"}
 function bindZoom(el){let dn=null;
@@ -263,14 +278,15 @@ function open(it){editing=it||null;pend=null;$("dt").textContent=sec==="b"?(it?"
  $("kw").hidden=true;
  $("n").value=it?.name||"";$("c").innerHTML=D().cats.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");if(it?.cat)$("c").value=it.cat;
  $("k").value=it?.code||"";$("p").value=it?.price!=null?Number(it.price).toLocaleString("es-CO"):"";$("s").value=it?String(stOf(it)):"";
- $("cn").value=it?.cname||"";$("col").value=it?.color||(sec==="b"?"#cdb4f6":"#2b1a52");$("colt").value=$("col").value;$("d").value=it?.desc||"";$("img").value="";
+ $("cn").value=it?.cname||"";$("tl").value=it?.tallas||"";$("tw").hidden=!isNE($("c").value);$("col").value=it?.color||(sec==="b"?"#cdb4f6":"#2b1a52");$("colt").value=$("col").value;$("d").value=it?.desc||"";$("img").value="";
  $("imgp").innerHTML=it?.img?`<img class="pv" src="${esc(it.img)}" alt="">`:"";$("dlg").showModal()}
+$("c").onchange=()=>{$("tw").hidden=!isNE($("c").value)};
 $("add").onclick=$("fab").onclick=()=>open();
 $("f").onsubmit=e=>{if(e.submitter?.value!=="ok")return;
  const old=editing||{},id=old.id||"c"+Date.now().toString(36);let img=old.img||"";
  if(pend){if(isP(img))trash.push(img);img=pend}
  const n=Math.max(0,parseInt(String($("s").value).replace(/\D/g,""))||0);
- const o={id,name:$("n").value,cat:$("c").value,code:old.code||"",cname:$("cn").value.trim(),price:parseInt(String($("p").value).replace(/\D/g,""))||0,color:$("col").value,desc:$("d").value,img,agot:n<=0};
+ const o={id,name:$("n").value,cat:$("c").value,code:old.code||"",cname:$("cn").value.trim(),tallas:isNE($("c").value)?$("tl").value.trim():"",price:parseInt(String($("p").value).replace(/\D/g,""))||0,color:$("col").value,desc:$("d").value,img,agot:n<=0};
  const i=D().caps.findIndex(c=>c.id===id);if(i<0)D().caps.push(o);else D().caps[i]=o;
  stk[id]=n;saveStock();render()};
 function setStock(it,n){n=Math.max(0,n);stk[it.id]=n;it.agot=n<=0;saveStock();render()}
