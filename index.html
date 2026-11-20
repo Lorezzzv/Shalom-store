@@ -49,9 +49,9 @@ input,select,textarea{width:100%;font:inherit;padding:8px;border:1.5px solid var
 #sv{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--card);border-top:2px solid var(--red);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;font-weight:700;font-size:13px}
 [hidden]{display:none!important}
 .fila{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:2px 0}
-.mancha{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:38px;min-width:80px}
+.mancha{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin:2px 0}
 .mancha svg{position:absolute;inset:-2px 0;width:100%;height:calc(100% + 4px);fill:var(--red);filter:drop-shadow(0 3px 6px #0006)}
-.mancha span{position:relative;z-index:1;font-family:"Knewave","Permanent Marker",Impact,sans-serif;font-size:15px;line-height:1;color:#fff;text-transform:uppercase;text-align:center;padding:0 14px;white-space:nowrap}
+.mancha span{position:relative;z-index:1;font-family:"Knewave","Permanent Marker",Impact,sans-serif;font-size:15px;line-height:1.2;color:#fff;text-transform:uppercase;text-align:center;padding:10px 28px}
 .talla{display:inline-flex;align-items:center;flex-wrap:wrap;gap:5px;border:2px solid var(--red);background:#9d5cff22;padding:4px 7px}
 .tl3{font-size:9.5px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
 .talla b{font-size:15px;font-weight:800;border:1.5px solid var(--ink);padding:0 6px}
@@ -209,13 +209,14 @@ function render(){
  $("fb").innerHTML=[{id:"todas",name:"TODAS"},...D().cats].map(c=>`<button data-f="${esc(c.id)}" class="${filter===c.id?"on":""}">${esc(c.name)}${canEdit&&c.id!=="todas"?`<span data-dc="${esc(c.id)}" title="Quitar categoría">✕</span>`:""}</button>`).join("");
  $("cnt").textContent=list.length+" REF."+(canEdit?" · "+list.reduce((a,i)=>a+stOf(i),0)+" UND.":"");
  $("grid").innerHTML=list.length?list.map(i=>{const st=stOf(i);
-  const mc=i.cname?`<div class="mancha">${MAN}<span>${esc(i.cname)}</span></div>`:"";
-  const tl=(isNE(i.cat)&&(i.tallas||"").trim())?`<div class="talla"><span class="tl3">CERRADA TALLA</span>${i.tallas.split(",").map(t=>t.trim()).filter(Boolean).map(t=>`<b>${esc(t)}</b>`).join("")}</div>`:"";
-  return `<div class="card" data-id="${esc(i.id)}">
+  const tt=isNE(i.cat)?(i.tallas||"").split(",").map(t=>t.trim()).filter(Boolean).join(", "):"";
+  const txt=[i.cname?(sec==="b"?"Color ":"COLOR ")+i.cname:"",tt?"CERRADA TALLA "+tt:""].filter(Boolean).join(" - ");
+  const mc=txt?`<div class="mancha">${MAN}<span>${esc(txt)}</span></div>`:"";
+    return `<div class="card" data-id="${esc(i.id)}">
  ${i.agot?'<span class="agot">AGOTADA</span>':''}
  <span class="cat">${esc(catName(i.cat))}</span><h3>${esc(i.name)}</h3>
  <div class="art${i.img?" zb":" ph"}">${i.img?`<img src="${esc(i.img)}" alt="${esc(i.name)}" loading="lazy" decoding="async" draggable="false"><span class="lupa">${LUPA}</span>`:(sec==="b"?bodyArt:cap)(i.color||(sec==="b"?"#cdb4f6":"#2b1a52"))}</div>
- ${(mc||tl)?`<div class="fila">${mc}${tl}</div>`:""}
+ ${mc}
  <p class="desc">${esc(i.desc)}</p>
  <div class="meta"><span>${fmt(i.price)}</span>${canEdit?`<span class="${st<=3?"low":""}">STOCK: ${st}</span>`:""}</div>
  ${canEdit?`<div class="adm"><button data-a="m">−1</button><button data-a="p">+1</button><button data-a="e">EDITAR</button><button data-a="d">BORRAR</button></div>`:""}
